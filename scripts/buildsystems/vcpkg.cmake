@@ -232,6 +232,21 @@ macro(find_package name)
         _find_package(gRPC ${ARGN})
     else()
         _find_package(${ARGV})
+        string(TOUPPER "${name}" _vcpkg_uppercase_name)
+        # If package does not define targets and only uses old school variables we have to fix the paths to the libraries since
+        # find_package will only find the debug libraries. 
+        # TODO: Proabably other variables need also fixing: like INCLUDE_DIR(S) LIBRARY_DIR(S) or package specific variables
+        # like BLAS95_LIBRARIES (this should be done within the portfile somehow?)
+        # TODO: remove the code duplication here
+        if(DEFINED ${name}_LIBRARIES)
+            set(${name}_LIBRARIES_DEBUG ${${name}_LIBRARIES})
+            STRING(REPLACE "debug/" "" ${name}_LIBRARIES_RELEASE "${${name}_LIBRARIES}")
+            set(${name}_LIBRARIES "$<$<CONFIG:Debug>:${${name}_LIBRARIES_DEBUG}>;$<$<CONFIG:RELEASE>:${${name}_LIBRARIES_RELEASE}>")
+        elseif(DEFINED ${_vcpkg_uppercase_name}_LIBRARIES)
+            set(${_vcpkg_uppercase_name}_LIBRARIES_DEBUG ${${_vcpkg_uppercase_name}_LIBRARIES})
+            STRING(REPLACE "debug/" "" ${_vcpkg_uppercase_name}_LIBRARIES_RELEASE "${${_vcpkg_uppercase_name}_LIBRARIES}")
+            set(${_vcpkg_uppercase_name}_LIBRARIES "$<$<CONFIG:Debug>:${${_vcpkg_uppercase_name}_LIBRARIES_DEBUG}>;$<$<CONFIG:RELEASE>:${${_vcpkg_uppercase_name}_LIBRARIES_RELEASE}>")
+        endif()
     endif()
 endmacro()
 
