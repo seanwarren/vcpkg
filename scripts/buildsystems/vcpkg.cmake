@@ -126,6 +126,7 @@ set(CMAKE_SYSTEM_IGNORE_PATH
     "${_programfiles}/OpenSSL-Win64/lib/VC"
     "${_programfiles}/OpenSSL-Win32/lib/VC/static"
     "${_programfiles}/OpenSSL-Win64/lib/VC/static"
+#From Neumann-A: Can those absolute paths be removed?
     "C:/OpenSSL/"
     "C:/OpenSSL-Win32/"
     "C:/OpenSSL-Win64/"
@@ -184,6 +185,7 @@ endfunction()
 
 macro(find_package name)
     string(TOLOWER "${name}" _vcpkg_lowercase_name)
+    string(TOUPPER "${name}" _vcpkg_uppercase_name)
     if(EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/${_vcpkg_lowercase_name}/vcpkg-cmake-wrapper.cmake")
         set(ARGS "${ARGV}")
         include(${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/${_vcpkg_lowercase_name}/vcpkg-cmake-wrapper.cmake)
@@ -231,22 +233,32 @@ macro(find_package name)
     elseif("${_vcpkg_lowercase_name}" STREQUAL "grpc" AND EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/grpc")
         _find_package(gRPC ${ARGN})
     else()
-        _find_package(${ARGV})
-        string(TOUPPER "${name}" _vcpkg_uppercase_name)
-        # If package does not define targets and only uses old school variables we have to fix the paths to the libraries since
-        # find_package will only find the debug libraries. 
-        # TODO: Proabably other variables need also fixing: like INCLUDE_DIR(S) LIBRARY_DIR(S) or package specific variables
-        # like BLAS95_LIBRARIES (this should be done within the portfile somehow?)
-        # TODO: remove the code duplication here
-        if(DEFINED ${name}_LIBRARIES)
-            set(${name}_LIBRARIES_DEBUG ${${name}_LIBRARIES})
-            STRING(REPLACE "debug/" "" ${name}_LIBRARIES_RELEASE "${${name}_LIBRARIES}")
-            set(${name}_LIBRARIES "$<$<CONFIG:Debug>:${${name}_LIBRARIES_DEBUG}>;$<$<CONFIG:RELEASE>:${${name}_LIBRARIES_RELEASE}>")
-        elseif(DEFINED ${_vcpkg_uppercase_name}_LIBRARIES)
-            set(${_vcpkg_uppercase_name}_LIBRARIES_DEBUG ${${_vcpkg_uppercase_name}_LIBRARIES})
-            STRING(REPLACE "debug/" "" ${_vcpkg_uppercase_name}_LIBRARIES_RELEASE "${${_vcpkg_uppercase_name}_LIBRARIES}")
-            set(${_vcpkg_uppercase_name}_LIBRARIES "$<$<CONFIG:Debug>:${${_vcpkg_uppercase_name}_LIBRARIES_DEBUG}>;$<$<CONFIG:RELEASE>:${${_vcpkg_uppercase_name}_LIBRARIES_RELEASE}>")
-        endif()
+        if(NOT ${name}_FOUND AND NOT ${_vcpkg_uppercase_name}_FOUND)
+			_find_package(${ARGV})
+			get_cmake_property(_pkg_all_vars VARIABLES)
+			message(STATUS "All-unfiltered-vars:${_pkg_all_vars}")
+			set(_pkg_filter_rgx "^(${name}|${_vcpkg_uppercase_name}|${_vcpkg_lowercase_name})([^_]*_)+(INCL|LIBR)")
+			message(STATUS "Regex:${_pkg_filter_rgx}")
+			list(FILTER _pkg_all_vars INCLUDE REGEX ${_pkg_filter_rgx})
+			message(STATUS "All-filtered-vars:${_pkg_all_vars}")
+			foreach(_pkg_var ${_pkg_all_vars})
+				message(STATUS "Value of ${_pkg_var}: ${${_pkg_var}}")
+			endforeach()
+			# If package does not define targets and only uses old school variables we have to fix the paths to the libraries since
+			# find_package will only find the debug libraries. 
+			# TODO: Proabably other variables need also fixing: like INCLUDE_DIR(S) LIBRARY_DIR(S) or package specific variables
+			# like BLAS95_LIBRARIES (this should be done within the portfile somehow?)
+			# TODO: remove the code duplication here
+	#        if(DEFINED ${name}_LIBRARIES)
+	#            set(${name}_LIBRARIES_DEBUG ${${name}_LIBRARIES})
+	#            STRING(REPLACE "debug/" "" ${name}_LIBRARIES_RELEASE "${${name}_LIBRARIES}")
+	#            set(${name}_LIBRARIES "$<$<CONFIG:Debug>:${${name}_LIBRARIES_DEBUG}>;$<$<CONFIG:RELEASE>:${${name}_LIBRARIES_RELEASE}>")
+	#        elseif(DEFINED ${_vcpkg_uppercase_name}_LIBRARIES)
+	#            set(${_vcpkg_uppercase_name}_LIBRARIES_DEBUG ${${_vcpkg_uppercase_name}_LIBRARIES})
+	#            STRING(REPLACE "debug/" "" ${_vcpkg_uppercase_name}_LIBRARIES_RELEASE "${${_vcpkg_uppercase_name}_LIBRARIES}")
+	#            set(${_vcpkg_uppercase_name}_LIBRARIES "$<$<CONFIG:Debug>:${${_vcpkg_uppercase_name}_LIBRARIES_DEBUG}>;$<$<CONFIG:RELEASE>:${${_vcpkg_uppercase_name}_LIBRARIES_RELEASE}>")
+	#        endif()
+		endif()
     endif()
 endmacro()
 
