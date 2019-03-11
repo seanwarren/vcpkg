@@ -13,7 +13,6 @@ steps:
 - script: ls
   displayName: List files
 
-steps:
 - script: ./bootstrap-vcpkg.sh
   displayName: 'Bootstrap vcpkg'
 
