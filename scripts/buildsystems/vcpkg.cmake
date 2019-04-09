@@ -277,7 +277,7 @@ macro(find_package name)
                     endif()
                     if(NOT "${_pkg_var_debug}" STREQUAL "${_pkg_var_release}")
                         if("${_pkg_var_release}" MATCHES "debug")
-                            message(STATUS "Warning-find_package: Found release paths instead of debug ones! Probably due to an extra 'd' in the libraryname.");
+                            message(STATUS "Warning-find_package: Found release paths instead of debug ones! Probably due to an extra 'd' in the libraryname.")
                         endif()
                         message(STATUS "Replacing ${_pkg_var}: ${${_pkg_var}}")
                         set(${_pkg_var} "debug;${_pkg_var_debug};optimized;${_pkg_var_release}")
