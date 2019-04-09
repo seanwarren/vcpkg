@@ -271,7 +271,7 @@ macro(find_package name)
                         # Release Path found
                         set(_pkg_var_release "${${_pkg_var}}")
                         if("${_pkg_var_release}" MATCHES "debug")
-                            message(STATUS "Warning-find_package: Found debug paths instead of release ones!");
+                            message(STATUS "Warning-find_package: Found debug paths instead of release ones!")
                         endif()
                         string(REGEX REPLACE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}" "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug" _pkg_var_debug "${_pkg_var_release}")
                     endif()
