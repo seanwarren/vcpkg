@@ -2,7 +2,7 @@ _find_package(${ARGS})
 
 function(add_qt_library _target)
     foreach(_lib IN LISTS ARGN)
-        find_library(${_lib}_LIBRARY_DEBUG NAMES ${_lib}d PATH_SUFFIXES plugins/platforms)
+        find_library(${_lib}_LIBRARY_DEBUG NAMES ${_lib}d PATH_SUFFIXES debug/plugins/platforms)
         find_library(${_lib}_LIBRARY_RELEASE NAMES ${_lib} PATH_SUFFIXES plugins/platforms)
         set_property(TARGET ${_target} APPEND PROPERTY INTERFACE_LINK_LIBRARIES 
         \$<\$<NOT:\$<CONFIG:DEBUG>>:${${_lib}_LIBRARY_RELEASE}>\$<\$<CONFIG:DEBUG>:${${_lib}_LIBRARY_DEBUG}>)
@@ -21,7 +21,7 @@ if("${_target_type}" STREQUAL "STATIC_LIBRARY")
     find_package(OpenSSL)
     find_package(harfbuzz CONFIG)
 
-    set_property(TARGET Qt5::Core APPEND PROPERTY INTERFACE_LINK_LIBRARIES 
+    target_link_libraries(Qt5::Core INTERFACE 
         ZLIB::ZLIB JPEG::JPEG PNG::PNG Freetype::Freetype sqlite3 harfbuzz::harfbuzz
         ${PostgreSQL_LIBRARY} double-conversion::double-conversion OpenSSL::SSL OpenSSL::Crypto  
     )
