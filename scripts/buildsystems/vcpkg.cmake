@@ -256,12 +256,12 @@ macro(find_package name)
             list(FILTER _pkg_all_vars INCLUDE REGEX ${_pkg_filter_rgx})
             message(STATUS "All-filtered-vars:${_pkg_all_vars}")
             #TODO: Add a fast way here instead of looping thorugh every element
-            if(("${_pkg_all_vars}" MATCHES "_RELEASE") AND ("${_pkg_all_vars}" MATCHES "_DEBUG"))
+            if(("${_pkg_all_vars}" MATCHES "_RELEASE") AND ("${_pkg_all_vars}" MATCHES "_DEBUG")) #IMPORTANT TODO: INSERT CHECK IF ONLY RELEASE OR DEBUG IS BUILD BY VCPKG
                 message(STATUS "RELEASE and DEBUG variables found within ${_pkg_all_vars}. Not fixing package variables")
             else()
             foreach(_pkg_var ${_pkg_all_vars})
                 message(STATUS "Value of ${_pkg_var}: ${${_pkg_var}}")
-                if(NOT "${${_pkg_var}}" MATCHES "optimized;" AND NOT "${${_pkg_var}}" MATCHES "debug;")
+                if(NOT "${${_pkg_var}}" MATCHES "optimized;" AND NOT "${${_pkg_var}}" MATCHES "debug;" AND "${${_pkg_var}}" MATCHES "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
                     # optimized and debug not found in package library variable. Need to probably fix variable!
                     if("${${_pkg_var}}" MATCHES "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug")
                         # Debug Path found
@@ -270,14 +270,20 @@ macro(find_package name)
                     else()
                         # Release Path found
                         set(_pkg_var_release "${${_pkg_var}}")
+                        if("${_pkg_var_release}" MATCHES "debug")
+                            message(STATUS "Warning-find_package: Found debug paths instead of release ones!");
+                        endif()
                         string(REGEX REPLACE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}" "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug" _pkg_var_debug "${_pkg_var_release}")
                     endif()
                     if(NOT "${_pkg_var_debug}" STREQUAL "${_pkg_var_release}")
+                        if("${_pkg_var_release}" MATCHES "debug")
+                            message(STATUS "Warning-find_package: Found release paths instead of debug ones! Probably due to an extra 'd' in the libraryname.");
+                        endif()
                         message(STATUS "Replacing ${_pkg_var}: ${${_pkg_var}}")
                         set(${_pkg_var} "debug;${_pkg_var_debug};optimized;${_pkg_var_release}")
                         message(STATUS "with ${_pkg_var}: ${${_pkg_var}}")
                     else()
-                        message(STATUS "Debug and Release values or the same! Propbably only library name without path (please check): ${${_pkg_var}}")
+                        message(STATUS "Debug and Release values are the same! Propbably only library name without path (please check): ${${_pkg_var}}")
                     endif()
                 else()
                     message(STATUS "${_pkg_var} contains debug and optimized keyword. Not changing package variable")
