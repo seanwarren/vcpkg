@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(libpqxx VERSION 6.0.0 LANGUAGES CXX)
 
-set(CMAKE_DEBUG_POSTFIX "d")
+#set(CMAKE_DEBUG_POSTFIX "d")
 set(CMAKE_CXX_STANDARD 14)
 
 find_library(LIBPQD NAMES libpq pq)
