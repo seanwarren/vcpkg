@@ -250,25 +250,32 @@ macro(find_package name)
             # find_package will only find the debug libraries. 
             _find_package(${ARGV})
             get_cmake_property(_pkg_all_vars VARIABLES)
-            #message(STATUS "All-unfiltered-vars:${_pkg_all_vars}")
+            
+            #General find_package debug info. Show all defined package variables to examine if they are set wrong
+            set(_pkg_filter_rgx "^(${name}|${_vcpkg_uppercase_name}|${_vcpkg_lowercase_name})([^_]*_)+")
+            message(STATUS "VCPKG-all-package-defined-vars: ${_pkg_all_vars}")
+            foreach(_pkg_var ${_pkg_all_vars})
+                message(STATUS "VCPKG-find_package value of ${_pkg_var}: ${${_pkg_var}}")
+            endforeach()
+            
+            #Fixing Libraries paths.
             set(_pkg_filter_rgx "^(${name}|${_vcpkg_uppercase_name}|${_vcpkg_lowercase_name})([^_]*_)+(LIBRAR|LIBS)")
-            #message(STATUS "Regex:${_pkg_filter_rgx}")
             list(FILTER _pkg_all_vars INCLUDE REGEX ${_pkg_filter_rgx})
-            message(STATUS "All-filtered-vars:${_pkg_all_vars}")
-            #TODO: Add a fast way here instead of looping thorugh every element
+            message(STATUS "VCPKG-find_package: all-filtered-library-vars: ${_pkg_all_vars}")
+            #TODO: Add/Find a fast way instead of looping thorugh every element
             if(("${_pkg_all_vars}" MATCHES "_RELEASE") AND ("${_pkg_all_vars}" MATCHES "_DEBUG")) #IMPORTANT TODO: INSERT CHECK IF ONLY RELEASE OR DEBUG IS BUILD BY VCPKG
-                message(STATUS "RELEASE and DEBUG variables found within ${_pkg_all_vars}. Not fixing package variables")
+                message(STATUS "VCPKG-find_package: RELEASE and DEBUG variables found within ${_pkg_all_vars}. Not fixing package variables because they are probably correctly set.")
             else()
             foreach(_pkg_var ${_pkg_all_vars})
-                message(STATUS "Value of ${_pkg_var}: ${${_pkg_var}}")
+                message(STATUS "VCPKG-find_package: Value of ${_pkg_var}: ${${_pkg_var}}")
                 if(NOT "${${_pkg_var}}" MATCHES "optimized;" AND NOT "${${_pkg_var}}" MATCHES "debug;" AND "${${_pkg_var}}" MATCHES "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
                     # optimized and debug not found in package library variable. Need to probably fix variable!
                     if("${${_pkg_var}}" MATCHES "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug")
                         # Debug Path found
                         if(CMAKE_BUILD_TYPE MATCHES "^Release$")
-                            message(WARNING "Warning-find_package: Found debug paths in release build! Possible issue: see #5543 and #6014")
+                            message(WARNING "VCPKG-find_package: Found debug paths in release build in variable ${_pkg_var}! Possible issue: see #5543 and #6014")
                             if(DEFINED ${name}_CONFIG OR DEFINED ${_vcpkg_lowercase_name}_CONFIG)
-                                message(DEPRECATED "deprecated-package-variable: package defines targets via a config or config does not set variable correctly. see #5543")
+                                message(DEPRECATED "VCPKG-deprecated-package-variable: package defines targets via a config or config does not set variable ${_pkg_var} correctly. see #5543")
                                 message(WARNING "Unsetting: ${_pkg_var}; So do not use it!")
                                 unset(${_pkg_var})
                             endif()
@@ -278,9 +285,9 @@ macro(find_package name)
                     else()
                         # Release Path found
                         if(CMAKE_BUILD_TYPE MATCHES "^Debug$")
-                            message(WARNING "Warning-find_package: Found release paths in debug build! Possible issue: see #5543 and #6014")
+                            message(WARNING "VCPKG-find_package: Found release paths in debug build in variable ${_pkg_var}! Possible issue: see #5543 and #6014")
                             if(DEFINED ${name}_CONFIG OR DEFINED ${_vcpkg_lowercase_name}_CONFIG)
-                                message(DEPRECATED "deprecated-package-variable: package defines targets via a config or config does not set variable correctly. see #5543")
+                                message(DEPRECATED "VCPKG-deprecated-package-variable: package defines targets via a config or config does not set variable ${_pkg_var} correctly. see #5543")
                                 message(WARNING "Unsetting: ${_pkg_var}; So do not use it!")
                                 unset(${_pkg_var})
                             endif()
