@@ -10,7 +10,7 @@ find_program(PERL NAMES perl)
 
 set(CMAKE_STATIC_LIBRARY_PREFIX)
 set(CMAKE_SHARED_LIBRARY_PREFIX)
-set(CMAKE_DEBUG_POSTFIX "d")
+#set(CMAKE_DEBUG_POSTFIX "d")
 
 file(REMOVE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/include/pg_config.h
