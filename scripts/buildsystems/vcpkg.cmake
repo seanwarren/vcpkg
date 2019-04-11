@@ -253,6 +253,7 @@ macro(find_package name)
             
             #General find_package debug info. Show all defined package variables to examine if they are set wrong
             set(_pkg_filter_rgx "^(${name}|${_vcpkg_uppercase_name}|${_vcpkg_lowercase_name})([^_]*_)+")
+            list(FILTER _pkg_all_vars INCLUDE REGEX ${_pkg_filter_rgx})
             message(STATUS "VCPKG-all-package-defined-vars: ${_pkg_all_vars}")
             foreach(_pkg_var ${_pkg_all_vars})
                 message(STATUS "VCPKG-find_package value of ${_pkg_var}: ${${_pkg_var}}")
@@ -260,15 +261,18 @@ macro(find_package name)
             
             #Fixing Libraries paths.
             set(_pkg_filter_rgx "^(${name}|${_vcpkg_uppercase_name}|${_vcpkg_lowercase_name})([^_]*_)+(LIBRAR|LIBS)")
+            
+            #Filtering for variables which contain the package name.
             list(FILTER _pkg_all_vars INCLUDE REGEX ${_pkg_filter_rgx})
             message(STATUS "VCPKG-find_package: all-filtered-library-vars: ${_pkg_all_vars}")
-            #TODO: Add/Find a fast way instead of looping thorugh every element
+            
+            #TODO: Futher filtering. Add/Find a fast way instead of looping thorugh every element
             if(("${_pkg_all_vars}" MATCHES "_RELEASE") AND ("${_pkg_all_vars}" MATCHES "_DEBUG")) #IMPORTANT TODO: INSERT CHECK IF ONLY RELEASE OR DEBUG IS BUILD BY VCPKG
                 message(STATUS "VCPKG-find_package: RELEASE and DEBUG variables found within ${_pkg_all_vars}. Not fixing package variables because they are probably correctly set.")
             else()
             foreach(_pkg_var ${_pkg_all_vars})
                 message(STATUS "VCPKG-find_package: Value of ${_pkg_var}: ${${_pkg_var}}")
-                if(NOT "${${_pkg_var}}" MATCHES "optimized;" AND NOT "${${_pkg_var}}" MATCHES "debug;" AND "${${_pkg_var}}" MATCHES "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+                if(NOT "${${_pkg_var}}" MATCHES "(optimized;|CONFIG:Release)" AND NOT "${${_pkg_var}}" MATCHES "(debug;|CONFIG:Debug)" AND "${${_pkg_var}}" MATCHES "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
                     # optimized and debug not found in package library variable. Need to probably fix variable!
                     if("${${_pkg_var}}" MATCHES "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug")
                         # Debug Path found
