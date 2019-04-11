@@ -247,7 +247,8 @@ macro(find_package name)
     else()
         if(NOT ${name}_FOUND AND NOT ${_vcpkg_uppercase_name}_FOUND)
             # If package does not define targets and only uses old school variables we have to fix the paths to the libraries since
-            # find_package will only find the debug libraries. 
+            # find_package will only find the debug libraries or only find the release libraries if the name of the library was 
+            # changed for debug builds. 
             _find_package(${ARGV})
             get_cmake_property(_pkg_all_vars VARIABLES)
             
@@ -267,8 +268,8 @@ macro(find_package name)
             message(STATUS "VCPKG-find_package: all-filtered-library-vars: ${_pkg_all_vars}")
             
             #TODO: Futher filtering. Add/Find a fast way instead of looping thorugh every element
-            if(("${_pkg_all_vars}" MATCHES "_RELEASE") AND ("${_pkg_all_vars}" MATCHES "_DEBUG")) #IMPORTANT TODO: INSERT CHECK IF ONLY RELEASE OR DEBUG IS BUILD BY VCPKG
-                message(STATUS "VCPKG-find_package: RELEASE and DEBUG variables found within ${_pkg_all_vars}. Not fixing package variables because they are probably correctly set.")
+            if(DEFINED VCPKG_BUILD_TYPE OR (("${_pkg_all_vars}" MATCHES "_RELEASE") AND ("${_pkg_all_vars}" MATCHES "_DEBUG")))
+                message(STATUS "VCPKG-find_package: VCPKG_BUILD_TYPE defined or RELEASE and DEBUG variables found within ${_pkg_all_vars}. Not fixing package variables.")
             else()
             foreach(_pkg_var ${_pkg_all_vars})
                 message(STATUS "VCPKG-find_package: Value of ${_pkg_var}: ${${_pkg_var}}")
