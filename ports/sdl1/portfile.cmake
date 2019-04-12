@@ -34,7 +34,13 @@ vcpkg_install_msbuild(
     ALLOW_ROOT_INCLUDES
 )
 
-file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/include/doxyfile)
+#Take all the fils into include/SDL to sovle conflict with SDL2 port
+file(GLOB files ${CURRENT_PACKAGES_DIR}/include/*)
+foreach(file ${files})
+        file(COPY ${file} DESTINATION ${CURRENT_PACKAGES_DIR}/include/SDL)
+        file(REMOVE ${file})
+endforeach()
+file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/include/SDL/doxyfile)
 
 if(NOT DEFINED VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL "release")
     file(MAKE_DIRECTORY ${CURRENT_PACKAGES_DIR}/lib/manual-link)
@@ -42,5 +48,5 @@ if(NOT DEFINED VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL "release")
 endif()
 if(NOT DEFINED VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL "debug")
     file(MAKE_DIRECTORY ${CURRENT_PACKAGES_DIR}/debug/lib/manual-link)
-    file(RENAME ${CURRENT_PACKAGES_DIR}/debug/lib/SDLmain.lib ${CURRENT_PACKAGES_DIR}/debug/lib/manual-link/SDLmaind.lib)
+    file(RENAME ${CURRENT_PACKAGES_DIR}/debug/lib/SDLmain.lib ${CURRENT_PACKAGES_DIR}/debug/lib/manual-link/SDLmain.lib)
 endif()
