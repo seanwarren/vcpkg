@@ -21,7 +21,7 @@ if("${_target_type}" STREQUAL "STATIC_LIBRARY")
     find_package(OpenSSL)
     find_package(harfbuzz CONFIG)
 
-    set_property(TARGET Qt5::Core APPEND PROPERTY INTERFACE_LINK_LIBRARIES 
+    target_link_libraries(Qt5::Core INTERFACE 
         ZLIB::ZLIB JPEG::JPEG PNG::PNG Freetype::Freetype sqlite3 harfbuzz::harfbuzz
         ${PostgreSQL_LIBRARY} double-conversion::double-conversion OpenSSL::SSL OpenSSL::Crypto  
     )

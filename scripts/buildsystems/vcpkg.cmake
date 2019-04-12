@@ -15,6 +15,18 @@ if(VCPKG_TOOLCHAIN)
     return()
 endif()
 
+if(NOT DEFINED CMAKE_BUILD_TYPE) 
+#If the build type is not defined we are generating with a multi config generator
+#Thus we should map common configurations correctly (If they have not been set)
+    message(STATUS "Multi configuration generator detected mapping MinSizeRel and RelWithDebInfo to Release")
+    if(NOT DEFINED CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL)
+        set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL Release)
+    endif()
+    if(NOT DEFINED CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO)
+        set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release)
+    endif()
+endif()
+
 if(VCPKG_TARGET_TRIPLET)
 elseif(CMAKE_GENERATOR_PLATFORM MATCHES "^[Ww][Ii][Nn]32$")
     set(_VCPKG_TARGET_TRIPLET_ARCH x86)
@@ -128,6 +140,7 @@ set(CMAKE_SYSTEM_IGNORE_PATH
     "${_programfiles}/OpenSSL-Win64/lib/VC"
     "${_programfiles}/OpenSSL-Win32/lib/VC/static"
     "${_programfiles}/OpenSSL-Win64/lib/VC/static"
+#From Neumann-A: Can those absolute paths be removed?
     "C:/OpenSSL/"
     "C:/OpenSSL-Win32/"
     "C:/OpenSSL-Win64/"
@@ -196,6 +209,7 @@ endfunction()
 
 macro(find_package name)
     string(TOLOWER "${name}" _vcpkg_lowercase_name)
+    string(TOUPPER "${name}" _vcpkg_uppercase_name)
     if(EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/${_vcpkg_lowercase_name}/vcpkg-cmake-wrapper.cmake")
         set(ARGS "${ARGV}")
         include(${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/${_vcpkg_lowercase_name}/vcpkg-cmake-wrapper.cmake)
@@ -219,31 +233,101 @@ macro(find_package name)
         else()
             _find_package(${ARGV})
         endif()
-    elseif("${name}" STREQUAL "GSL" AND EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/gsl")
-        _find_package(${ARGV})
-        if(GSL_FOUND AND TARGET GSL::gsl)
-            set_property( TARGET GSL::gslcblas APPEND PROPERTY IMPORTED_CONFIGURATIONS Release )
-            set_property( TARGET GSL::gsl APPEND PROPERTY IMPORTED_CONFIGURATIONS Release )
-            if( EXISTS "${GSL_LIBRARY_DEBUG}" AND EXISTS "${GSL_CBLAS_LIBRARY_DEBUG}")
-            set_property( TARGET GSL::gsl APPEND PROPERTY IMPORTED_CONFIGURATIONS Debug )
-            set_target_properties( GSL::gsl PROPERTIES IMPORTED_LOCATION_DEBUG "${GSL_LIBRARY_DEBUG}" )
-                set_property( TARGET GSL::gslcblas APPEND PROPERTY IMPORTED_CONFIGURATIONS Debug )
-                set_target_properties( GSL::gslcblas PROPERTIES IMPORTED_LOCATION_DEBUG "${GSL_CBLAS_LIBRARY_DEBUG}" )
-            endif()
-        endif()
-    elseif("${name}" STREQUAL "CURL" AND EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/curl")
-        _find_package(${ARGV})
-        if(CURL_FOUND)
-            if(EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/nghttp2.lib")
-                list(APPEND CURL_LIBRARIES
-                    "debug" "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/lib/nghttp2.lib"
-                    "optimized" "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/nghttp2.lib")
-            endif()
-        endif()
+    # elseif("${name}" STREQUAL "GSL" AND EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/gsl")
+        # _find_package(${ARGV})
+        # if(GSL_FOUND AND TARGET GSL::gsl)
+            # set_property( TARGET GSL::gslcblas APPEND PROPERTY IMPORTED_CONFIGURATIONS Release )
+            # set_property( TARGET GSL::gsl APPEND PROPERTY IMPORTED_CONFIGURATIONS Release )
+            # if( EXISTS "${GSL_LIBRARY_DEBUG}" AND EXISTS "${GSL_CBLAS_LIBRARY_DEBUG}")
+            # set_property( TARGET GSL::gsl APPEND PROPERTY IMPORTED_CONFIGURATIONS Debug )
+            # set_target_properties( GSL::gsl PROPERTIES IMPORTED_LOCATION_DEBUG "${GSL_LIBRARY_DEBUG}" )
+                # set_property( TARGET GSL::gslcblas APPEND PROPERTY IMPORTED_CONFIGURATIONS Debug )
+                # set_target_properties( GSL::gslcblas PROPERTIES IMPORTED_LOCATION_DEBUG "${GSL_CBLAS_LIBRARY_DEBUG}" )
+            # endif()
+        # endif()
+    # elseif("${name}" STREQUAL "CURL" AND EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/curl")
+        # _find_package(${ARGV})
+        # if(CURL_FOUND)
+            # if(EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/nghttp2.lib")
+                # list(APPEND CURL_LIBRARIES
+                    # "debug" "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/lib/nghttp2.lib"
+                    # "optimized" "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/nghttp2.lib")
+            # endif()
+        # endif()
     elseif("${_vcpkg_lowercase_name}" STREQUAL "grpc" AND EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/grpc")
         _find_package(gRPC ${ARGN})
     else()
-        _find_package(${ARGV})
+        if(NOT ${name}_FOUND AND NOT ${_vcpkg_uppercase_name}_FOUND)
+            # If package does not define targets and only uses old school variables we have to fix the paths to the libraries since
+            # find_package will only find the debug libraries or only find the release libraries if the name of the library was 
+            # changed for debug builds. 
+            _find_package(${ARGV})
+            get_cmake_property(_pkg_all_vars VARIABLES)
+            
+            #General find_package debug info. Show all defined package variables to examine if they are set wrong
+            set(_pkg_filter_rgx "^(${name}|${_vcpkg_uppercase_name}|${_vcpkg_lowercase_name})([^_]*_)+")
+            list(FILTER _pkg_all_vars INCLUDE REGEX ${_pkg_filter_rgx})
+            message(STATUS "VCPKG-all-package-defined-vars: ${_pkg_all_vars}")
+            foreach(_pkg_var ${_pkg_all_vars})
+                message(STATUS "VCPKG-find_package value of ${_pkg_var}: ${${_pkg_var}}")
+            endforeach()
+            
+            #Fixing Libraries paths.
+            set(_pkg_filter_rgx "^(${name}|${_vcpkg_uppercase_name}|${_vcpkg_lowercase_name})([^_]*_)+(LIBRAR|LIBS)")
+            
+            #Filtering for variables which contain the package name.
+            list(FILTER _pkg_all_vars INCLUDE REGEX ${_pkg_filter_rgx})
+            message(STATUS "VCPKG-find_package: all-filtered-library-vars: ${_pkg_all_vars}")
+            
+            #TODO: Futher filtering. Add/Find a fast way instead of looping thorugh every element
+            if(DEFINED VCPKG_BUILD_TYPE OR (("${_pkg_all_vars}" MATCHES "_RELEASE") AND ("${_pkg_all_vars}" MATCHES "_DEBUG")))
+                message(STATUS "VCPKG-find_package: VCPKG_BUILD_TYPE defined or RELEASE and DEBUG variables found within ${_pkg_all_vars}. Not fixing package variables.")
+            else()
+            foreach(_pkg_var ${_pkg_all_vars})
+                message(STATUS "VCPKG-find_package: Value of ${_pkg_var}: ${${_pkg_var}}")
+                if(NOT "${${_pkg_var}}" MATCHES "(optimized;|CONFIG:Release)" AND NOT "${${_pkg_var}}" MATCHES "(debug;|CONFIG:Debug)" AND "${${_pkg_var}}" MATCHES "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+                    # optimized and debug not found in package library variable. Need to probably fix variable!
+                    if("${${_pkg_var}}" MATCHES "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug")
+                        # Debug Path found
+                        if(CMAKE_BUILD_TYPE MATCHES "^Release$")
+                            message(WARNING "VCPKG-find_package: Found debug paths in release build in variable ${_pkg_var}! Possible issue: see #5543 and #6014")
+                            if(DEFINED ${name}_CONFIG OR DEFINED ${_vcpkg_lowercase_name}_CONFIG)
+                                message(DEPRECATED "VCPKG-deprecated-package-variable: package defines targets via a config or config does not set variable ${_pkg_var} correctly. see #5543")
+                                message(WARNING "Unsetting: ${_pkg_var}; So do not use it!")
+                                unset(${_pkg_var})
+                            endif()
+                        endif()
+                        set(_pkg_var_debug "${${_pkg_var}}")
+                        string(REGEX REPLACE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug" "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}" _pkg_var_release "${_pkg_var_debug}")
+                    else()
+                        # Release Path found
+                        if(CMAKE_BUILD_TYPE MATCHES "^Debug$")
+                            message(WARNING "VCPKG-find_package: Found release paths in debug build in variable ${_pkg_var}! Possible issue: see #5543 and #6014")
+                            if(DEFINED ${name}_CONFIG OR DEFINED ${_vcpkg_lowercase_name}_CONFIG)
+                                message(DEPRECATED "VCPKG-deprecated-package-variable: package defines targets via a config or config does not set variable ${_pkg_var} correctly. see #5543")
+                                message(WARNING "Unsetting: ${_pkg_var}; So do not use it!")
+                                unset(${_pkg_var})
+                            endif()
+                        endif()
+                        set(_pkg_var_release "${${_pkg_var}}")
+                        string(REGEX REPLACE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}" "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug" _pkg_var_debug "${_pkg_var_release}")
+                    endif()
+                    if(NOT "${_pkg_var_debug}" STREQUAL "${_pkg_var_release}")
+                        if("${_pkg_var_release}" MATCHES "debug")
+                            message(STATUS "Warning-find_package: Found release paths instead of debug ones! Probably due to an extra 'd' in the libraryname.")
+                        endif()
+                        message(STATUS "Replacing ${_pkg_var}: ${${_pkg_var}}")
+                        set(${_pkg_var} "debug;${_pkg_var_debug};optimized;${_pkg_var_release}")
+                        message(STATUS "with ${_pkg_var}: ${${_pkg_var}}")
+                    else()
+                        message(STATUS "Debug and Release values are the same! Propbably only library name without path (please check): ${${_pkg_var}}")
+                    endif()
+                else()
+                    message(STATUS "${_pkg_var} contains debug and optimized keyword. Not changing package variable")
+                endif()
+            endforeach()
+            endif()
+        endif()
     endif()
 endmacro()
 

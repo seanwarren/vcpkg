@@ -10,7 +10,7 @@ find_program(PERL NAMES perl)
 
 set(CMAKE_STATIC_LIBRARY_PREFIX)
 set(CMAKE_SHARED_LIBRARY_PREFIX)
-set(CMAKE_DEBUG_POSTFIX "d")
+#set(CMAKE_DEBUG_POSTFIX "d")
 
 file(REMOVE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/include/pg_config.h
@@ -126,8 +126,6 @@ set(pg_libpq_catalog_interface
     src/include/catalog/pg_type.h
     src/include/catalog/genbki.h
 )
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_DEBUG_POSTFIX "d")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_library(libpq ${pg_port_src} ${pg_backend_src} ${pg_libpq_src})
 target_compile_definitions(libpq PRIVATE -DFRONTEND -DENABLE_THREAD_SAFETY -DUSE_OPENSSL -D_CRT_SECURE_NO_WARNINGS)
