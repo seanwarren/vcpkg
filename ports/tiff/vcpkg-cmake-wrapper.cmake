@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 _find_package(${ARGS})
 
 find_package(LibLZMA)
@@ -16,3 +17,22 @@ if(TIFF_LIBRARIES)
     list(APPEND TIFF_LIBRARIES m)
   endif()
 endif()
+=======
+_find_package(${ARGS})
+
+find_package(LibLZMA)
+find_package(JPEG)
+find_package(ZLIB)
+if(TARGET TIFF::TIFF)
+  target_link_libraries(TIFF::TIFF INTERFACE ${LIBLZMA_LIBRARIES} JPEG::JPEG ZLIB::ZLIB) # Should be fixed upstream
+  if(UNIX)
+    set_property(TARGET TIFF::TIFF APPEND PROPERTY INTERFACE_LINK_LIBRARIES m)
+  endif()
+endif()
+if(TIFF_LIBRARIES)
+  list(APPEND TIFF_LIBRARIES ${LIBLZMA_LIBRARIES} ${JPEG_LIBRARIES} ${ZLIB_LIBRARIES})
+  if(UNIX)
+    list(APPEND TIFF_LIBRARIES m)
+  endif()
+endif()
+>>>>>>> f97a8bfaa33326a37ba45af200204a953a846db5

@@ -15,6 +15,18 @@ if(VCPKG_TOOLCHAIN)
     return()
 endif()
 
+if(NOT DEFINED CMAKE_BUILD_TYPE) 
+#If the build type is not defined we are generating with a multi config generator
+#Thus we should map common configurations correctly (If they have not been set)
+    message(STATUS "Multi configuration generator detected mapping MinSizeRel and RelWithDebInfo to Release")
+    if(NOT DEFINED CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL)
+        set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL Release)
+    endif()
+    if(NOT DEFINED CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO)
+        set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release)
+    endif()
+endif()
+
 if(VCPKG_TARGET_TRIPLET)
 elseif(CMAKE_GENERATOR_PLATFORM MATCHES "^[Ww][Ii][Nn]32$")
     set(_VCPKG_TARGET_TRIPLET_ARCH x86)
@@ -126,6 +138,7 @@ set(CMAKE_SYSTEM_IGNORE_PATH
     "${_programfiles}/OpenSSL-Win64/lib/VC"
     "${_programfiles}/OpenSSL-Win32/lib/VC/static"
     "${_programfiles}/OpenSSL-Win64/lib/VC/static"
+#From Neumann-A: Can those absolute paths be removed?
     "C:/OpenSSL/"
     "C:/OpenSSL-Win32/"
     "C:/OpenSSL-Win64/"
@@ -194,6 +207,7 @@ endfunction()
 
 macro(find_package name)
     string(TOLOWER "${name}" _vcpkg_lowercase_name)
+    string(TOUPPER "${name}" _vcpkg_uppercase_name)
     if(EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/${_vcpkg_lowercase_name}/vcpkg-cmake-wrapper.cmake")
         set(ARGS "${ARGV}")
         include(${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/${_vcpkg_lowercase_name}/vcpkg-cmake-wrapper.cmake)
@@ -241,7 +255,58 @@ macro(find_package name)
     elseif("${_vcpkg_lowercase_name}" STREQUAL "grpc" AND EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/grpc")
         _find_package(gRPC ${ARGN})
     else()
-        _find_package(${ARGV})
+        if(NOT ${name}_FOUND AND NOT ${_vcpkg_uppercase_name}_FOUND)
+            _find_package(${ARGV})
+            get_cmake_property(_pkg_all_vars VARIABLES)
+            #message(STATUS "All-unfiltered-vars:${_pkg_all_vars}")
+            set(_pkg_filter_rgx "^(${name}|${_vcpkg_uppercase_name}|${_vcpkg_lowercase_name})([^_]*_)+(LIBRAR|LIBS)")
+            #message(STATUS "Regex:${_pkg_filter_rgx}")
+            list(FILTER _pkg_all_vars INCLUDE REGEX ${_pkg_filter_rgx})
+            message(STATUS "All-filtered-vars:${_pkg_all_vars}")
+            #TODO: Add a fast way here instead of looping thorugh every element
+            if(("${_pkg_all_vars}" MATCHES "_RELEASE") AND ("${_pkg_all_vars}" MATCHES "_DEBUG"))
+                message(STATUS "RELEASE and DEBUG variables found within ${_pkg_all_vars}. Not fixing package variables")
+            else()
+            foreach(_pkg_var ${_pkg_all_vars})
+                message(STATUS "Value of ${_pkg_var}: ${${_pkg_var}}")
+                if(NOT "${${_pkg_var}}" MATCHES "optimized;" AND NOT "${${_pkg_var}}" MATCHES "debug;")
+                    # optimized and debug not found in package library variable. Need to probably fix variable!
+                    if("${${_pkg_var}}" MATCHES "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug")
+                        # Debug Path found
+                        set(_pkg_var_debug "${${_pkg_var}}")
+                        string(REGEX REPLACE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug" "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}" _pkg_var_release "${_pkg_var_debug}")
+                    else()
+                        # Release Path found
+                        set(_pkg_var_release "${${_pkg_var}}")
+                        string(REGEX REPLACE "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}" "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug" _pkg_var_debug "${_pkg_var_release}")
+                    endif()
+                    if(NOT "${_pkg_var_debug}" STREQUAL "${_pkg_var_release}")
+                        message(STATUS "Replacing ${_pkg_var}: ${${_pkg_var}}")
+                        set(${_pkg_var} "debug;${_pkg_var_debug};optimized;${_pkg_var_release}")
+                        message(STATUS "with ${_pkg_var}: ${${_pkg_var}}")
+                    else()
+                        message(STATUS "Debug and Release values or the same! Propbably only library name without path (please check): ${${_pkg_var}}")
+                    endif()
+                else()
+                    message(STATUS "${_pkg_var} contains debug and optimized keyword. Not changing package variable")
+                endif()
+            endforeach()
+            endif()
+            # If package does not define targets and only uses old school variables we have to fix the paths to the libraries since
+            # find_package will only find the debug libraries. 
+            # TODO: Proabably other variables need also fixing: like INCLUDE_DIR(S) LIBRARY_DIR(S) or package specific variables
+            # like BLAS95_LIBRARIES (this should be done within the portfile somehow?)
+            # TODO: remove the code duplication here
+    #        if(DEFINED ${name}_LIBRARIES)
+    #            set(${name}_LIBRARIES_DEBUG ${${name}_LIBRARIES})
+    #            STRING(REPLACE "debug/" "" ${name}_LIBRARIES_RELEASE "${${name}_LIBRARIES}")
+    #            set(${name}_LIBRARIES "$<$<CONFIG:Debug>:${${name}_LIBRARIES_DEBUG}>;$<$<CONFIG:RELEASE>:${${name}_LIBRARIES_RELEASE}>")
+    #        elseif(DEFINED ${_vcpkg_uppercase_name}_LIBRARIES)
+    #            set(${_vcpkg_uppercase_name}_LIBRARIES_DEBUG ${${_vcpkg_uppercase_name}_LIBRARIES})
+    #            STRING(REPLACE "debug/" "" ${_vcpkg_uppercase_name}_LIBRARIES_RELEASE "${${_vcpkg_uppercase_name}_LIBRARIES}")
+    #            set(${_vcpkg_uppercase_name}_LIBRARIES "$<$<CONFIG:Debug>:${${_vcpkg_uppercase_name}_LIBRARIES_DEBUG}>;$<$<CONFIG:RELEASE>:${${_vcpkg_uppercase_name}_LIBRARIES_RELEASE}>")
+    #        endif()
+        endif()
     endif()
 endmacro()
 
