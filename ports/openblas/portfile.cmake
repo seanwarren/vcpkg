@@ -16,13 +16,18 @@ if(NOT VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
     message(FATAL_ERROR "openblas can only be built for x64 currently")
 endif()
 
+if(NOT VCPKG_CMAKE_SYSTEM_NAME OR VCPKG_CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+    vcpkg_check_linkage(ONLY_DYNAMIC_LIBRARY)
+    set(CMAKE_CROSSCOMPILING OFF)
+endif()
+
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO xianyi/OpenBLAS
-    REF 651ab01d2b552dd979120edd44cf0ccb0031bed1
-    SHA512 78b57a59b011fc310deed47c66e8c4343cd23bdcefe369ad19499099d28dc5ed9206d5f77f7771acedafdb7f936befc285172f77ff78cb0175a7091c82ec148b
+    REF v0.3.6
+    SHA512 1ad980176a51f70d8b0b2d158da8c01f30f77b7cf385b24a6340d3c5feb1513bd04b9390487d05cc9557db7dc5f7c135b1688dec9f17ebef35dba884ef7ddee9
     HEAD_REF develop
-    PATCHES 
+    PATCHES
         uwp.patch
         fix-space-path.patch
 )
@@ -73,15 +78,11 @@ if(VCPKG_CMAKE_SYSTEM_NAME  STREQUAL "WindowsStore")
 elseif(NOT VCPKG_CMAKE_SYSTEM_NAME)
     vcpkg_configure_cmake(
         SOURCE_PATH ${SOURCE_PATH}
-        OPTIONS 
-            -DBUILD_WITHOUT_LAPACK=ON)
+        OPTIONS -DBUILD_WITHOUT_LAPACK=ON)
 else()
     vcpkg_configure_cmake(
         SOURCE_PATH ${SOURCE_PATH}
-        OPTIONS 
-            -DCMAKE_SYSTEM_PROCESSOR=AMD64 
-            -DNOFORTRAN=ON
-            -DBUILD_WITHOUT_LAPACK=ON)
+        OPTIONS -DCMAKE_SYSTEM_PROCESSOR=AMD64 -DNOFORTRAN=ON)
 endif()
 
 

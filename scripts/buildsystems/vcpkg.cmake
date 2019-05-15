@@ -49,6 +49,18 @@ else()
         set(_VCPKG_TARGET_TRIPLET_ARCH arm)
     elseif(CMAKE_GENERATOR MATCHES "^Visual Studio 15 2017$")
         set(_VCPKG_TARGET_TRIPLET_ARCH x86)
+    elseif(CMAKE_GENERATOR MATCHES "^Visual Studio 16 2019$")
+        if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^[Xx]86$")
+            set(_VCPKG_TARGET_TRIPLET_ARCH x86)
+        elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^[Aa][Mm][Dd]64$")
+            set(_VCPKG_TARGET_TRIPLET_ARCH x64)
+        elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^[Aa][Rr][Mm]$")
+            set(_VCPKG_TARGET_TRIPLET_ARCH arm)
+        elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^[Aa][Rr][Mm]64$")
+            set(_VCPKG_TARGET_TRIPLET_ARCH arm64)
+        else()
+
+        endif()
     else()
         find_program(_VCPKG_CL cl)
         if(_VCPKG_CL MATCHES "amd64/cl.exe$" OR _VCPKG_CL MATCHES "x64/cl.exe$")
@@ -107,7 +119,7 @@ if(NOT EXISTS "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}" AND NOT _CMAKE_I
     message(WARNING "There are no libraries installed for the Vcpkg triplet ${VCPKG_TARGET_TRIPLET}.")
 endif()
 
-if(CMAKE_BUILD_TYPE MATCHES "^Debug$" OR NOT DEFINED CMAKE_BUILD_TYPE) #Debug build: Put Debug paths before Release paths. 
+if(CMAKE_BUILD_TYPE MATCHES "^Debug$" OR NOT DEFINED CMAKE_BUILD_TYPE) #Debug build: Put Debug paths before Release paths.
     list(APPEND CMAKE_PREFIX_PATH
         ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}
     )
@@ -132,6 +144,8 @@ endif()
 set(CMAKE_FIND_FRAMEWORK LAST)
 
 file(TO_CMAKE_PATH "$ENV{PROGRAMFILES}" _programfiles)
+set(_PROGRAMFILESX86 "PROGRAMFILES(x86)")
+file(TO_CMAKE_PATH "$ENV{${_PROGRAMFILESX86}}" _programfiles_x86)
 set(CMAKE_SYSTEM_IGNORE_PATH
     "${_programfiles}/OpenSSL"
     "${_programfiles}/OpenSSL-Win32"
@@ -140,7 +154,13 @@ set(CMAKE_SYSTEM_IGNORE_PATH
     "${_programfiles}/OpenSSL-Win64/lib/VC"
     "${_programfiles}/OpenSSL-Win32/lib/VC/static"
     "${_programfiles}/OpenSSL-Win64/lib/VC/static"
-#From Neumann-A: Can those absolute paths be removed?
+    "${_programfiles_x86}/OpenSSL"
+    "${_programfiles_x86}/OpenSSL-Win32"
+    "${_programfiles_x86}/OpenSSL-Win64"
+    "${_programfiles_x86}/OpenSSL-Win32/lib/VC"
+    "${_programfiles_x86}/OpenSSL-Win64/lib/VC"
+    "${_programfiles_x86}/OpenSSL-Win32/lib/VC/static"
+    "${_programfiles_x86}/OpenSSL-Win64/lib/VC/static"
     "C:/OpenSSL/"
     "C:/OpenSSL-Win32/"
     "C:/OpenSSL-Win64/"
