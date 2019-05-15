@@ -22,8 +22,7 @@ jobs:
         buildPlatform: 'linux'
       mac:
         imageName: 'macos-10.13'
-        DEVELOPER_DIR: '/Applications/Xcode_10.1.app'
-        VCPKG_ALLOW_APPLE_CLANG: true
+        DEVELOPER_DIR: '/Applications/Xcode_9.4.1.app'
         buildPlatform: 'osx'
 
       windows:
@@ -31,7 +30,7 @@ jobs:
         buildPlatform: 'windows'
 
   variables:
-    VCPKG_ROOT: '$(Build.SourcesDirectory)'
+    VCPKG_ROOT: '$(Build.SourcesDirectory)/vcpkg'
     archiveFile: '$(Build.ArtifactStagingDirectory)/flimfit-env-$(buildPlatform).zip'
 
   pool:
@@ -43,37 +42,35 @@ jobs:
       inputs:
         versionSpec: '3.6'
         architecture: 'x64'
-
       
-    - script: brew install gcc p7zip
+    - script: brew install gcc6 p7zip
       displayName: 'Install brew dependencies'
       condition: eq(variables['buildPlatform'],'osx')
 
+    - task: CopyFiles@2
+      inputs:
+        contents: '**'
+        targetFolder: '$(Build.SourcesDirectory)/vcpkg'
 
     - script: python build-flimfit-env.py
+      workingDirectory: 'vcpkg'
       displayName: 'Build vcpkg ports'
 
     - task: CopyFiles@2
       condition: always() 
       inputs:
-        contents: 'buildtrees/**/*.log'
-        targetFolder: logs
+        contents: 'vcpkg/buildtrees/**/*.log'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/logs'
 
-    - task: CopyFiles@2
-      condition: always() 
-      inputs:
-        contents: '$(Build.SourcesDirectory)'
-        targetFolder: '$(Source.ArtifactStagingDirectory)/vcpkg'
-      
     - task: PublishBuildArtifacts@1
       condition: always() 
       inputs:
-        pathtoPublish: logs
-        artifactName: vcpkg-logs-$(buildPlatform)
-
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)/logs'
+        artifactName: 'vcpkg-logs-$(buildPlatform)'
+      
     - task: ArchiveFiles@2
       inputs:
-        rootFolderOrFile: '$(Source.ArtifactStagingDirectory)/vcpkg'
+        rootFolderOrFile: '$(Build.SourcesDirectory)/vcpkg'
         archiveType: 'zip'
         archiveFile: '$(archiveFile)'
 
