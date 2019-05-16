@@ -78,10 +78,3 @@ jobs:
       inputs:
         pathtoPublish: '$(archiveFile)'
         artifactName: 'flimfit-env-$(buildPlatform)'
-
-    - task: GithubRelease@0
-      displayName: 'Create GitHub Release'
-      inputs:
-        githubConnection: seanwarren
-        repositoryName: seanwarren/vcpkg
-        assets: $(archiveFile)
