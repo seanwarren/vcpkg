@@ -176,7 +176,7 @@ vcpkg_configure_cmake(
        -Drelocatable-install:BOOL=ON
        -Dsphinx:BOOL=OFF
        -DCMAKE_CXX_STANDARD=14
-       #-DPYTHON_EXECUTABLE="${PYTHON2}"
+       -DPYTHON_EXECUTABLE="${PYTHON2}"
 )
 
 vcpkg_install_cmake()
