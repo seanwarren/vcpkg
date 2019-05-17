@@ -4,7 +4,7 @@ function(add_qt_library _target)
     foreach(_lib IN LISTS ARGN)
         find_library(${_lib}_LIBRARY_DEBUG NAMES ${_lib}d PATH_SUFFIXES debug/plugins/platforms)
         find_library(${_lib}_LIBRARY_RELEASE NAMES ${_lib} PATH_SUFFIXES plugins/platforms)
-        set_property(TARGET ${_target} APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+        target_link_libraries()(${_target} INTERFACE 
         \$<\$<NOT:\$<CONFIG:DEBUG>>:${${_lib}_LIBRARY_RELEASE}>\$<\$<CONFIG:DEBUG>:${${_lib}_LIBRARY_DEBUG}>)
     endforeach()
 endfunction()
@@ -40,7 +40,7 @@ if("${_target_type}" STREQUAL "STATIC_LIBRARY")
       add_qt_library(Qt5::Core Qt5WindowsUIAutomationSupport qwindows qdirect2d)
 
     elseif(APPLE)
-    target_link_libraries(Qt5::Core INTERFACE
+        target_link_libraries(Qt5::Core INTERFACE
             "-weak_framework DiskArbitration" "-weak_framework IOKit" "-weak_framework Foundation" "-weak_framework CoreServices"
             "-weak_framework AppKit" "-weak_framework Security" "-weak_framework ApplicationServices"
             "-weak_framework CoreFoundation" "-weak_framework SystemConfiguration"
