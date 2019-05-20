@@ -4,7 +4,7 @@ function(add_qt_library _target)
     foreach(_lib IN LISTS ARGN)
         find_library(${_lib}_LIBRARY_DEBUG NAMES ${_lib}d PATH_SUFFIXES debug/plugins/platforms)
         find_library(${_lib}_LIBRARY_RELEASE NAMES ${_lib} PATH_SUFFIXES plugins/platforms)
-        target_link_libraries(${_target} APPEND INTERFACE 
+        target_link_libraries(${_target} INTERFACE 
         \$<\$<NOT:\$<CONFIG:DEBUG>>:${${_lib}_LIBRARY_RELEASE}>\$<\$<CONFIG:DEBUG>:${${_lib}_LIBRARY_DEBUG}>)
     endforeach()
 endfunction()
