@@ -60,6 +60,7 @@ if("${_target_type}" STREQUAL "STATIC_LIBRARY")
             "-weak_framework OpenGL"
             "-weak_framework AGL"
             "-weak_framework ImageIO" 
+            "-weak_framework IOSurface"
             "z" "m"
             cups)
         add_qt_library(Qt5::Core 
