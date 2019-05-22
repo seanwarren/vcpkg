@@ -91,6 +91,7 @@ elseif(VCPKG_CMAKE_SYSTEM_NAME STREQUAL "Linux")
         SOURCE_PATH ${SOURCE_PATH}
         PLATFORM "linux-g++"
         OPTIONS
+            -qt-xcb
             ${CORE_OPTIONS}
         OPTIONS_RELEASE
             "LIBJPEG_LIBS=${CURRENT_INSTALLED_DIR}/lib/libjpeg.a"
