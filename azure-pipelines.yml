@@ -20,7 +20,7 @@ jobs:
         CXX: '/usr/bin/clang++'
         CC: '/usr/bin/clang'
         buildPlatform: 'linux'
-        setupCommand: 'sudo apt-get install libfontconfig1-dev libfreetype6-dev libx11-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libx11-xcb-dev libxcb-glx0-dev libxkbcommon-dev'
+        setupCommand: 'sudo apt-get install libxkbcommon-dev'
       mac:
         imageName: 'macos-10.13'
         DEVELOPER_DIR: '/Applications/Xcode_10.1.app'
