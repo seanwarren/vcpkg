@@ -34,6 +34,7 @@ vcpkg_configure_cmake(
     PREFER_NINJA
     OPTIONS
         -DINSTALL_CMAKE_MODULE_PATH=${CURRENT_PACKAGES_DIR}/share/libraw
+        -DENABLE_OPENMP=OFF
         -DCMAKE_DEBUG_POSTFIX=d
 )
 
