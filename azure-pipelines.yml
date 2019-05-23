@@ -42,7 +42,7 @@ jobs:
   pool:
     vmImage: $(imageName)
 
-  container: $(container)
+  container: $(containerName)
 
   steps:
 
