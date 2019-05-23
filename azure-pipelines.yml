@@ -21,16 +21,19 @@ jobs:
         CC: '/usr/bin/clang'
         buildPlatform: 'linux'
         setupCommand: 'sudo apt-get install libxkbcommon-dev'
+        containerName: 'ubuntu:18.04'
       mac:
         imageName: 'macos-10.13'
         DEVELOPER_DIR: '/Applications/Xcode_10.1.app'
         buildPlatform: 'osx'
         setupCommand: brew install gcc6 p7zip
+        containerName: ''
 
       windows:
         imageName: 'vs2017-win2016'
         buildPlatform: 'windows'
         setupCommand: ''
+        containerName: ''
 
   variables:
     VCPKG_ROOT: '$(Build.SourcesDirectory)/vcpkg'
@@ -38,6 +41,8 @@ jobs:
 
   pool:
     vmImage: $(imageName)
+
+  container: $(container)
 
   steps:
 
