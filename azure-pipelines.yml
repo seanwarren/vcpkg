@@ -18,7 +18,7 @@ jobs:
     VCPKG_ROOT: '$(Build.SourcesDirectory)/vcpkg'
   
   steps:
-  - template: 'azure-pipeline-steps.yaml'
+  - template: azure-pipeline-steps.yml
     parameters:
       buildPlatform: 'linux'
 
@@ -41,7 +41,7 @@ jobs:
   - script: 'brew install gcc6 p7zip'
     displayName: 'Install components'
 
-  - template: 'azure-pipeline-steps.yaml'
+  - template: azure-pipeline-steps.yml
     parameters:
       buildPlatform: 'osx'
 
@@ -58,6 +58,6 @@ jobs:
   steps: 
   - script: 'sudo apt-get install libxkbcommon-dev'
     displayName: 'Install components'
-  - template: 'azure-pipeline-steps.yaml'
+  - template: azure-pipeline-steps.yml
     parameters:
       buildPlatform: 'linux'
