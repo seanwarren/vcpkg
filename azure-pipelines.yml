@@ -56,7 +56,7 @@ jobs:
     CC: '/usr/bin/clang'
 
   steps: 
-  - script: 'sudo apt-get install libxkbcommon-dev'
+  - script: 'apt-get install libxkbcommon-dev'
     displayName: 'Install components'
   - template: azure-pipeline-steps.yml
     parameters:
