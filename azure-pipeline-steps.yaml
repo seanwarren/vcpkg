@@ -1,0 +1,41 @@
+
+parameters:
+- buildPlatform: 'windows'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.6'
+    architecture: 'x64'
+  
+- task: CopyFiles@2
+  inputs:
+    contents: '**'
+    targetFolder: '$(Build.SourcesDirectory)/vcpkg'
+
+- script: python build-flimfit-env.py
+  workingDirectory: 'vcpkg'
+  displayName: 'Build vcpkg ports'
+
+- task: CopyFiles@2
+  condition: always() 
+  inputs:
+    contents: 'vcpkg/buildtrees/**/*.log'
+    targetFolder: '$(Build.ArtifactStagingDirectory)/logs'
+
+- task: PublishBuildArtifacts@1
+  condition: always() 
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/logs'
+    artifactName: 'vcpkg-logs-${{ parameters.buildPlatform }}'
+  
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(Build.SourcesDirectory)/vcpkg'
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/flimfit-env-${{ parameters.buildPlatform }}.zip'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/flimfit-env-${{ parameters.buildPlatform }}.zip'
+    artifactName: 'flimfit-env-${{ parameters.buildPlatform }}'

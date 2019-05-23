@@ -10,86 +10,54 @@ pr:
 - master
 
 jobs:
-- job: Build
+- job: windows
   timeoutInMinutes: 360
-
-  strategy:
-    matrix:
-      linux:
-        imageName: 'ubuntu-16.04'
-        CXX: '/usr/bin/clang++'
-        CC: '/usr/bin/clang'
-        buildPlatform: 'linux'
-        setupCommand: 'sudo apt-get install libxkbcommon-dev'
-        containerImage: 'ubuntu:18.04'
-      mac:
-        imageName: 'macos-10.13'
-        DEVELOPER_DIR: '/Applications/Xcode_10.1.app'
-        buildPlatform: 'osx'
-        setupCommand: brew install gcc6 p7zip
-        containerImage: ''
-
-      windows:
-        imageName: 'vs2017-win2016'
-        buildPlatform: 'windows'
-        setupCommand: ''
-        containerImage: ''
-
+  pool: 
+    vmImage: 'vs2017-win2016'
   variables:
     VCPKG_ROOT: '$(Build.SourcesDirectory)/vcpkg'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/flimfit-env-$(buildPlatform).zip'
-
-  pool:
-    vmImage: $(imageName)
-
-  container: $[ variables['containerImage'] ]
-
+  
   steps:
+  - template: 'azure-pipeline-steps.yaml'
+    parameters:
+      buildPlatform: 'linux'
 
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.6'
-        architecture: 'x64'
-      
-    - script: $(setupCommand)
-      displayName: 'Install dependencies'
+  - task: TriggerPipeline@1
+    inputs:
+      serviceConnection: 'azure-devops'
+      project: '6439e790-bc20-4600-8a79-6e11fc8b08c2'
+      Pipeline: 'Build'
+      buildDefinition: 'Galene'
 
-    - task: CopyFiles@2
-      inputs:
-        contents: '**'
-        targetFolder: '$(Build.SourcesDirectory)/vcpkg'
+- job: osx
+  timeoutInMinutes: 360
+  pool:
+    vmImage: 'macos-10.14'
+  variables:
+    VCPKG_ROOT: '$(Build.SourcesDirectory)/vcpkg'
+    DEVELOPER_DIR: '/Applications/Xcode_10.1.app'
 
-    - script: python build-flimfit-env.py
-      workingDirectory: 'vcpkg'
-      displayName: 'Build vcpkg ports'
+  steps: 
+  - script: 'brew install gcc6 p7zip'
+    displayName: 'Install components'
 
-    - task: CopyFiles@2
-      condition: always() 
-      inputs:
-        contents: 'vcpkg/buildtrees/**/*.log'
-        targetFolder: '$(Build.ArtifactStagingDirectory)/logs'
+  - template: 'azure-pipeline-steps.yaml'
+    parameters:
+      buildPlatform: 'osx'
 
-    - task: PublishBuildArtifacts@1
-      condition: always() 
-      inputs:
-        pathtoPublish: '$(Build.ArtifactStagingDirectory)/logs'
-        artifactName: 'vcpkg-logs-$(buildPlatform)'
-      
-    - task: ArchiveFiles@2
-      inputs:
-        rootFolderOrFile: '$(Build.SourcesDirectory)/vcpkg'
-        archiveType: 'zip'
-        archiveFile: '$(archiveFile)'
+- job: linux
+  timeoutInMinutes: 360
+  pool:
+    vmImage: 'ubuntu-16.04'
+  container: ubuntu:18.04
+  variables:
+    VCPKG_ROOT: '$(Build.SourcesDirectory)/vcpkg'
+    CXX: '/usr/bin/clang++'
+    CC: '/usr/bin/clang'
 
-    - task: PublishBuildArtifacts@1
-      inputs:
-        pathtoPublish: '$(archiveFile)'
-        artifactName: 'flimfit-env-$(buildPlatform)'
-    
-    - task: TriggerPipeline@1
-      condition: eq(variables['buildPlatform'], 'windows')
-      inputs:
-        serviceConnection: 'azure-devops'
-        project: '6439e790-bc20-4600-8a79-6e11fc8b08c2'
-        Pipeline: 'Build'
-        buildDefinition: 'Galene'
+  steps: 
+  - script: 'sudo apt-get install libxkbcommon-dev'
+    displayName: 'Install components'
+  - template: 'azure-pipeline-steps.yaml'
+    parameters:
+      buildPlatform: 'linux'
