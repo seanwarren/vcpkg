@@ -49,9 +49,9 @@ jobs:
   timeoutInMinutes: 360
   pool:
     vmImage: 'ubuntu-16.04'
-  container: 
-    image: buildpack-deps:18.04
-    options: --privileged
+  #container: 
+  #  image: buildpack-deps:18.04
+  #  options: --privileged
   variables:
     VCPKG_ROOT: '$(Build.SourcesDirectory)/vcpkg'
     CXX: '/usr/bin/clang++'
