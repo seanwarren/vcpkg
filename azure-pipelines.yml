@@ -20,7 +20,7 @@ jobs:
   steps:
   - template: azure-pipeline-steps.yml
     parameters:
-      buildPlatform: 'linux'
+      buildPlatform: 'windows'
 
   - task: TriggerPipeline@1
     inputs:
