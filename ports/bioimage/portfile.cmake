@@ -14,6 +14,7 @@ vcpkg_from_bitbucket(
    PATCHES
       bioimageconvert.patch
       static-openjpeg.patch
+      bim_jp2_format.patch # for compatability with openjpeg
 )
 
 set(BIC_ENABLE_OPENCV OFF)
@@ -37,6 +38,8 @@ string(REPLACE "\${BIC_EXIV2_REQUIRED_VERSION} " "" _contents "${_contents}")
 string(REPLACE "\${BIC_LCMS2_REQUIRED_VERSION} " "" _contents "${_contents}")
 string(REPLACE "\${EXIV2_LIBRARIES}" "exiv2lib" _contents "${_contents}")
 string(REPLACE "\${GEOTIFF_LIBRARIES}" "geotiff_library" _contents "${_contents}")
+string(REPLACE "message(FATAL_ERROR \"Automatic detection of system openjpeg library not implemented\")" "find_package(OpenJPEG)
+   set(OPENJPEG_LIBRARIES openjp2)" _contents "${_contents}")
 message("Patching: ${CMAKELIST}")
 file(WRITE ${CMAKELIST} "${_contents}")
 
@@ -48,7 +51,8 @@ vcpkg_configure_cmake(
       -DBIC_INTERNAL_LIBJPEG=OFF
       -DBIC_INTERNAL_LIBGEOTIFF=OFF
       -DBIC_INTERNAL_EXIV2=OFF
-      -DBIC_INTERNAL_OPENJPEG=ON
+      -DBIC_INTERNAL_OPENJPEG=OFF
+      -DBIC_INTERNAL_GDCM=OFF
       -DBIC_ENABLE_LIBJPEG_TURBO=OFF
       -DBIC_ENABLE_FFMPEG=OFF
       -DBIC_ENABLE_GDCM=OFF
@@ -60,7 +64,6 @@ vcpkg_configure_cmake(
       -DBIC_ENABLE_OPENMP=OFF
       -DBIC_ENABLE_IMGCNV=OFF
       -DLIBBIOIMAGE_TRANSFORMS=OFF
-      #-DZLIB_ROOT=${ZLIB_ROOT}
 )
 
 vcpkg_install_cmake()
