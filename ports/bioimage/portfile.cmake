@@ -13,7 +13,6 @@ vcpkg_from_bitbucket(
    HEAD_REF master
    PATCHES
       bioimageconvert.patch
-      bim_jp2_format.patch # for compatability with openjpeg
 )
 
 set(BIC_ENABLE_OPENCV OFF)
@@ -37,8 +36,7 @@ string(REPLACE "\${BIC_EXIV2_REQUIRED_VERSION} " "" _contents "${_contents}")
 string(REPLACE "\${BIC_LCMS2_REQUIRED_VERSION} " "" _contents "${_contents}")
 string(REPLACE "\${EXIV2_LIBRARIES}" "exiv2lib" _contents "${_contents}")
 string(REPLACE "\${GEOTIFF_LIBRARIES}" "geotiff_library" _contents "${_contents}")
-string(REPLACE "message(FATAL_ERROR \"Automatic detection of system openjpeg library not implemented\")" "find_package(OpenJPEG)
-   set(OPENJPEG_LIBRARIES openjp2)" _contents "${_contents}")
+string(REPLACE "message(FATAL_ERROR \"Automatic detection of system openjpeg library not implemented\")" "find_package(OpenJPEG)" _contents "${_contents}")
 message("Patching: ${CMAKELIST}")
 file(WRITE ${CMAKELIST} "${_contents}")
 
