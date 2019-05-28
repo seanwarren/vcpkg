@@ -8,12 +8,11 @@ include(vcpkg_common_functions)
 vcpkg_from_bitbucket(
    OUT_SOURCE_PATH SOURCE_PATH
    REPO dimin/bioimageconvert
-   REF v2.5.2
-   SHA512 73d4675ff652bd296e626f0475760ea5ce4b60efa32ce35172faf182bdda90aab62ae019eaccbaf864cae99ed6fea0977891a926ec4519e5205ea21f10d1d006
+   REF v2.7.0
+   SHA512 ff0caaf12ecb971714ca42dfb8a504ed48473e330de67ba0e5fa03d457bc6dd14bcac5eea7fbe843d7783071b39ca75d53f311c71bf5b2f1955369f1112dcb06
    HEAD_REF master
    PATCHES
       bioimageconvert.patch
-      static-openjpeg.patch
       bim_jp2_format.patch # for compatability with openjpeg
 )
 
